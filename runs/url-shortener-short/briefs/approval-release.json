@@ -1,0 +1,72 @@
+﻿{
+  "stage": "release",
+  "description": "HIGH IMPACT: release readiness computed from evidence; a human signs off",
+  "upstream": {
+    "tests": {
+      "summary": "55 passed, 0 failed, 0 errors; independent re-run exit=0 (verified)",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\tests.json"
+    },
+    "security": {
+      "summary": "2 finding(s), 0 high; New project reviewed. URL validation (http/https only, host required, no userinfo, 2048 cap, no control/non-ASCII/encoded CRLF), alias regex with reserved names, atomic putIfAbsent for aliases and codes, AtomicLong clicks, 302 with no-store, configured base URL and generic JSON errors are implemented correctly. Two real gaps remain: the link store has no size cap or rate limit, and the body-size guard is bypassed by chunked requests.",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\security.json"
+    },
+    "docs": {
+      "summary": "1 added, 1 modified, 0 deleted (+124/-13 lines); agent: Rewrote README.md (prerequisites, setup/test/run commands, quick start, API summary, configuration, limitations) and added docs/API.md (endpoint reference with examples, error table, data notes), based on the code read in the staging copy.",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\docs.json"
+    },
+    "risk": {
+      "summary": "New project: in-memory Spring Boot URL shortener. Main risks are abuse of redirects (unsafe schemes, open redirect, SSRF-style targets), alias/code collisions and click-counter races under concurrency, unbounded in-memory growth, and data loss on restart. There is no existing project, so regression and schema migration risk is limited to future changes; the in-memory store has no migration but a later switch to a database would need one.",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\risk.json"
+    },
+    "implement": {
+      "summary": "18 added, 0 modified, 0 deleted (+717/-0 lines); agent: New project: Spring Boot 3.5.6 (Maven, Java 17) URL shortener with in-memory ConcurrentHashMap store, POST /api/links, GET /{code} 302 redirect with Cache-Control no-store, GET /api/links/{code} stats, centralized 422/400/404/409 error mapping, security headers filter with body size cap, README with run/test commands.",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\implement.json"
+    },
+    "design": {
+      "summary": "New project: single-module Spring Boot 3.5.6 (Maven, Java) URL shortener with an in-memory ConcurrentHashMap store (putIfAbsent for atomic code/alias uniqueness, AtomicLong click counter), JSON API under /api, root-level GET /{code} 302 redirect, centralized error mapping (422/400/404/409), JUnit 5 + MockMvc tests. | stack: Java (compiled with java.release=17, runs on the locally installed JDK 25)/Spring Boot 3.5.6 (spring-boot-starter-web, spring-boot-starter-validation, spring-boot-starter-test) | test: mvn -B -q test",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\design.json"
+    }
+  },
+  "design": {
+    "stack": {
+      "language": "Java (compiled with java.release=17, runs on the locally installed JDK 25)",
+      "framework": "Spring Boot 3.5.6 (spring-boot-starter-web, spring-boot-starter-validation, spring-boot-starter-test)",
+      "build_tool": "Maven",
+      "rationale": "Stack is mandated by the requirement (Java, Spring Boot, Maven, JUnit). Boot 3.5.6 parent is already in the local ~/.m2 so build works offline; release 17 is the Boot 3 baseline and compiles on JDK 25. Only three starters to keep supply-chain surface minimal."
+    },
+    "commands": {
+      "setup": "mvn -q dependency:resolve",
+      "test": "mvn -B -q test",
+      "run": "mvn spring-boot:run"
+    },
+    "api": [
+      "POST /api/links  body {\"url\": string, \"alias\": string optional}  -> 201 {\"code\", \"shortUrl\", \"url\"}; 422 invalid/missing url or invalid/reserved alias; 409 alias taken; 400 unparseable JSON",
+      "GET /{code}  -> 302 Found with single Location header = stored URL, Cache-Control: no-store; increments click count by one; 404 unknown code",
+      "GET /api/links/{code}  -> 200 {\"code\", \"url\", \"clicks\"}; 404 unknown code; does not change the click count",
+      "Error body (all errors): {\"error\": string, \"message\": string} with no exception class names or stack traces",
+      "shortUrl = app.base-url + \"/\" + code (never derived from Host / X-Forwarded-Host)"
+    ],
+    "schema": [],
+    "rollback_plan": "New project with no prior release: rollback is to stop the service and revert/discard the release commit or tag (git revert of the release commit, or redeploy the previous artifact if any). There is no database, schema or migration, and in-memory data is ephemeral, so no data restore is needed; deleting the target/ directory removes build output. If persistence is added later, that release must carry its own forward/backward migration plan."
+  },
+  "files_changed": [
+    ".gitignore (added)",
+    "README.md (added)",
+    "pom.xml (added)",
+    "src/main/java/com/example/shortener/ApiException.java (added)",
+    "src/main/java/com/example/shortener/ApiExceptionHandler.java (added)",
+    "src/main/java/com/example/shortener/CodeGenerator.java (added)",
+    "src/main/java/com/example/shortener/Link.java (added)",
+    "src/main/java/com/example/shortener/LinkController.java (added)",
+    "src/main/java/com/example/shortener/LinkService.java (added)",
+    "src/main/java/com/example/shortener/LinkStore.java (added)",
+    "src/main/java/com/example/shortener/RandomCodeGenerator.java (added)",
+    "src/main/java/com/example/shortener/SecurityHeadersFilter.java (added)",
+    "src/main/java/com/example/shortener/UrlShortenerApplication.java (added)",
+    "src/main/resources/application.properties (added)",
+    "src/test/java/com/example/shortener/ConcurrencyTest.java (added)",
+    "src/test/java/com/example/shortener/LinkApiTest.java (added)",
+    "src/test/java/com/example/shortener/LinkServiceTest.java (added)",
+    "src/test/java/com/example/shortener/LinkStoreTest.java (added)"
+  ]
+}

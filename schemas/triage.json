@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "action": {
+      "enum": [
+        "retry",
+        "rollback",
+        "escalate"
+      ]
+    },
+    "guidance": {
+      "type": "string"
+    },
+    "rationale": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary",
+    "action",
+    "guidance",
+    "rationale"
+  ],
+  "additionalProperties": false
+}

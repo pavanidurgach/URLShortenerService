@@ -1,0 +1,192 @@
+{
+  "summary": "New project: single-module Spring Boot 3.5.6 (Maven, Java) URL shortener with an in-memory ConcurrentHashMap store (putIfAbsent for atomic code/alias uniqueness, AtomicLong click counter), JSON API under /api, root-level GET /{code} 302 redirect, centralized error mapping (422/400/404/409), JUnit 5 + MockMvc tests. | stack: Java (compiled with java.release=17, runs on the locally installed JDK 25)/Spring Boot 3.5.6 (spring-boot-starter-web, spring-boot-starter-validation, spring-boot-starter-test) | test: mvn -B -q test",
+  "stack": {
+    "language": "Java (compiled with java.release=17, runs on the locally installed JDK 25)",
+    "framework": "Spring Boot 3.5.6 (spring-boot-starter-web, spring-boot-starter-validation, spring-boot-starter-test)",
+    "build_tool": "Maven",
+    "rationale": "Stack is mandated by the requirement (Java, Spring Boot, Maven, JUnit). Boot 3.5.6 parent is already in the local ~/.m2 so build works offline; release 17 is the Boot 3 baseline and compiles on JDK 25. Only three starters to keep supply-chain surface minimal."
+  },
+  "commands": {
+    "setup": "mvn -q dependency:resolve",
+    "test": "mvn -B -q test",
+    "run": "mvn spring-boot:run"
+  },
+  "components": [
+    "pom.xml: spring-boot-starter-parent 3.5.6, java.version 17, starters web/validation/test only",
+    "UrlShortenerApplication: @SpringBootApplication entry point",
+    "LinkController: POST /api/links, GET /api/links/{code}, GET /{code} redirect (302, Cache-Control: no-store)",
+    "LinkService: validates URL (java.net.URI, http/https case-insensitive, non-empty host, <=2048, no whitespace/control chars/CRLF, no userinfo) and alias (full-match ^[A-Za-z0-9_-]{3,32}$, case sensitive, reserved names rejected); generates 7-char SecureRandom [A-Za-z0-9] codes with bounded retry (10)",
+    "LinkStore: only storage class; ConcurrentHashMap<String, Link> with putIfAbsent; Link record holds code, url and AtomicLong clicks",
+    "CodeGenerator: small injectable interface/functional bean so tests can force collisions",
+    "ApiExceptionHandler: @RestControllerAdvice mapping validation to 422, unreadable JSON to 400, unknown code to 404, taken alias to 409, no stack traces in body",
+    "SecurityHeadersFilter or controller-set headers: X-Content-Type-Options: nosniff, Referrer-Policy: no-referrer",
+    "application.properties: app.base-url=http://localhost:8080, request size caps, no INFO-level logging of URLs",
+    "src/test/java: LinkApiTest (MockMvc, S1-S7, R1/R2/R6/R9/R10/R11), ConcurrencyTest (R3/R5), LinkServiceTest (R4 collision with injected generator), LinkStoreTest (R8)",
+    "README.md: run/test commands, API examples, ephemeral-storage and open-redirect warnings"
+  ],
+  "api": [
+    "POST /api/links  body {\"url\": string, \"alias\": string optional}  -> 201 {\"code\", \"shortUrl\", \"url\"}; 422 invalid/missing url or invalid/reserved alias; 409 alias taken; 400 unparseable JSON",
+    "GET /{code}  -> 302 Found with single Location header = stored URL, Cache-Control: no-store; increments click count by one; 404 unknown code",
+    "GET /api/links/{code}  -> 200 {\"code\", \"url\", \"clicks\"}; 404 unknown code; does not change the click count",
+    "Error body (all errors): {\"error\": string, \"message\": string} with no exception class names or stack traces",
+    "shortUrl = app.base-url + \"/\" + code (never derived from Host / X-Forwarded-Host)"
+  ],
+  "schema": [],
+  "adr": [
+    {
+      "id": "ADR-1",
+      "decision": "In-memory ConcurrentHashMap store behind one LinkStore class; no database.",
+      "rationale": "Minimal for the requirement and orchestrator guidance. putIfAbsent gives atomic uniqueness for both aliases and generated codes. Persistence ceiling: all links and clicks are lost on restart and memory is unbounded; a database implementation can replace LinkStore later with its own migration plan."
+    },
+    {
+      "id": "ADR-2",
+      "decision": "Redirect with 302 Found and Cache-Control: no-store; redirect route is root-level GET /{code}, API under /api.",
+      "rationale": "Human decision A4. 302 plus no-store keeps clicks counted. Separate /api prefix plus reserved-name rejection means a code can never shadow an API route."
+    },
+    {
+      "id": "ADR-3",
+      "decision": "Clicks are AtomicLong in the Link record, incremented only on successful redirect lookup.",
+      "rationale": "Avoids lost updates under concurrent redirects without locks; stats reads never count."
+    },
+    {
+      "id": "ADR-4",
+      "decision": "Hand-written URL validation with java.net.URI in LinkService; Bean Validation only for presence/shape of fields, mapped to 422.",
+      "rationale": "No extra libraries; scheme/host/length/control-char rules from clarify A1 are not expressible with @URL alone. Single validation point at create; redirect trusts only stored validated values."
+    },
+    {
+      "id": "ADR-5",
+      "decision": "Pin Spring Boot parent 3.5.6 and java.version 17.",
+      "rationale": "3.5.6 is available in the local Maven cache (offline reproducible); JDK 25 is installed locally and compiles release 17 bytecode."
+    }
+  ],
+  "decisions": [
+    {
+      "key": "A1.url_rules",
+      "value": "Only http/https (case-insensitive), non-empty host, max 2048 chars, no whitespace/control chars/CRLF, no userinfo; otherwise 422",
+      "source": "human"
+    },
+    {
+      "key": "A2.alias_rules",
+      "value": "Regex ^[A-Za-z0-9_-]{3,32}$ full match, case sensitive, reserved names (api, links, actuator, error, h2-console) rejected with 422; taken alias 409",
+      "source": "human"
+    },
+    {
+      "key": "A3.click_semantics",
+      "value": "Each successful redirect increments by one; unknown codes and stats reads do not; count exposed at GET /api/links/{code}",
+      "source": "human"
+    },
+    {
+      "key": "A4.redirect_status",
+      "value": "302 Found with Location header and Cache-Control: no-store",
+      "source": "human"
+    },
+    {
+      "key": "A5.error_codes",
+      "value": "422 for missing/invalid fields, 400 for unparseable JSON",
+      "source": "human"
+    },
+    {
+      "key": "generated_code_format",
+      "value": "7 chars, SecureRandom over [A-Za-z0-9], shared keyspace with aliases, up to 10 putIfAbsent attempts then 503 without overwriting",
+      "source": "design"
+    },
+    {
+      "key": "base_url",
+      "value": "app.base-url property, default http://localhost:8080",
+      "source": "design"
+    },
+    {
+      "key": "stats_endpoint",
+      "value": "GET /api/links/{code}",
+      "source": "design"
+    },
+    {
+      "key": "java_spring_versions",
+      "value": "Spring Boot 3.5.6, java.version 17, built on local JDK 25",
+      "source": "design"
+    },
+    {
+      "key": "test_command",
+      "value": "mvn -B -q test (no install step; deps must already be resolved by setup)",
+      "source": "design"
+    }
+  ],
+  "assumptions": [
+    "Maven (mvn) and JDK are on PATH, and Boot 3.5.6 artifacts are in ~/.m2 or Maven Central is reachable during setup.",
+    "Service listens on default port 8080 and sits behind no proxy; app.base-url is set per deployment.",
+    "Exhausted code-generation retries return 503 (practically unreachable with 62^7 keyspace).",
+    "The service is not exposed publicly as-is; rate limiting and blocklists are follow-up before public exposure."
+  ],
+  "tradeoffs": [
+    "In-memory store: simplest and race-free via ConcurrentHashMap, but not durable and not shared across instances.",
+    "Hand-rolled validation over a validation library: fewer dependencies, slightly more code to test.",
+    "302 over 301: every click hits the service (accurate counts) at the cost of no browser/CDN caching.",
+    "Root-level /{code} gives short URLs, requiring reserved-name rejection for aliases."
+  ],
+  "limitations": [
+    "All links and click counts are lost on restart (ephemeral, documented in README).",
+    "No cap on number of links and no rate limiting: memory exhaustion/abuse possible if exposed publicly.",
+    "Open redirect / phishing abuse is inherent to a public shortener; only scheme/host validation is done, no SSRF target or blocklist filtering of private hosts.",
+    "Stored URLs are plain text and readable by anyone who knows the code via the stats endpoint.",
+    "Single instance only; no authentication, no link deletion or expiry."
+  ],
+  "rollback_plan": "New project with no prior release: rollback is to stop the service and revert/discard the release commit or tag (git revert of the release commit, or redeploy the previous artifact if any). There is no database, schema or migration, and in-memory data is ephemeral, so no data restore is needed; deleting the target/ directory removes build output. If persistence is added later, that release must carry its own forward/backward migration plan.",
+  "risk_coverage": [
+    {
+      "risk_id": "R1",
+      "validation": "Parameterized MockMvc test in LinkApiTest: javascript:, data:, file:, ftp:, 'http://', 'http://a b', userinfo URL, 2049-char, null/blank url return 422; HTTP://ok.com and valid URLs return 201."
+    },
+    {
+      "risk_id": "R2",
+      "validation": "MockMvc: redirect is 302 with single Location equal to stored URL and nosniff/Referrer-Policy headers; URLs with raw CR/LF or %0d%0a rejected 422; security stage checklist; README documents open-redirect caveat."
+    },
+    {
+      "risk_id": "R3",
+      "validation": "ConcurrencyTest: 50 threads with CountDownLatch create same alias; assert exactly one 201, 49 409, stored URL is the winner's."
+    },
+    {
+      "risk_id": "R4",
+      "validation": "LinkServiceTest with injected CodeGenerator returning a duplicate first then a unique code: existing link untouched, new link gets second code; exhausted retries error without overwrite."
+    },
+    {
+      "risk_id": "R5",
+      "validation": "ConcurrencyTest: 100 threads x 10 redirects then GET /api/links/{code} returns exactly 1000; unknown code 404; stats reads leave count unchanged."
+    },
+    {
+      "risk_id": "R6",
+      "validation": "Parameterized MockMvc: 'ab', 33 chars, 'a b', 'a/b', 'a.b', unicode, 'abc\\n', 'api' give 422; 'abc', 'A_b-9', 32 chars give 201; 'Abc' and 'abc' coexist."
+    },
+    {
+      "risk_id": "R7",
+      "validation": "MockMvc/size-cap test: ~1 MB body rejected with 4xx and nothing stored; URL cap 2048 tested under R1; unbounded map documented as known ceiling in README and limitations."
+    },
+    {
+      "risk_id": "R8",
+      "validation": "LinkStoreTest exercises only public methods; README review confirms ephemeral-storage warning."
+    },
+    {
+      "risk_id": "R9",
+      "validation": "MockMvc: missing url 422, malformed JSON 400, unknown code 404 on redirect and stats, duplicate alias 409; body asserted free of exception class names/stack traces."
+    },
+    {
+      "risk_id": "R10",
+      "validation": "MockMvc: redirect status 302, Location equals original URL, Cache-Control: no-store present."
+    },
+    {
+      "risk_id": "R11",
+      "validation": "MockMvc: create with spoofed Host: evil.example header; shortUrl starts with configured app.base-url."
+    },
+    {
+      "risk_id": "R12",
+      "validation": "Release stage runs documented setup/test/run commands verbatim from a clean checkout plus curl smoke; traceability check that S1-S7 each have an asserting test; mutation spot check of the 409 and 404 branches; pinned Boot 3.5.6."
+    },
+    {
+      "risk_id": "R13",
+      "validation": "Review pom.xml has only web, validation, test starters; run mvn dependency:tree to confirm no unexpected artifacts."
+    },
+    {
+      "risk_id": "R14",
+      "validation": "Create and redirect a URL containing a fake token, capture log output and assert the token is absent (no URL/body logging at INFO); README privacy note reviewed."
+    }
+  ]
+}

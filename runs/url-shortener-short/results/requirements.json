@@ -1,0 +1,64 @@
+{
+  "summary": "New project: Spring Boot (Maven) URL shortener with create, redirect, custom alias, click count and validation, tested with JUnit and documented run/test commands.",
+  "problem": "Build a new Java Spring Boot (Maven) service that creates short codes for http(s) URLs, redirects them, supports unique custom aliases, tracks click counts and rejects invalid input, with JUnit tests and documented run/test commands.",
+  "statements": [
+    {"id": "S1", "text": "Creating a short link for a long http(s) URL returns the short code and the short URL.", "type": "functional"},
+    {"id": "S2", "text": "Requesting a short link redirects to its original URL.", "type": "functional"},
+    {"id": "S3", "text": "Requesting an unknown short code returns 404.", "type": "functional"},
+    {"id": "S4", "text": "A caller may supply an optional custom alias of 3-32 characters (letters, digits, '_' or '-') which is used as the short code.", "type": "functional"},
+    {"id": "S5", "text": "Creating a link with an alias that is already taken returns 409.", "type": "functional"},
+    {"id": "S6", "text": "A link's click count can be retrieved.", "type": "functional"},
+    {"id": "S7", "text": "Invalid URLs (and invalid aliases) are rejected with 422.", "type": "functional"},
+    {"id": "S8", "text": "The service is implemented in Java with Spring Boot, built with Maven, and tested with JUnit.", "type": "non-functional"},
+    {"id": "S9", "text": "Documented commands are provided to run the service and to run its tests.", "type": "non-functional"}
+  ],
+  "ambiguities": [
+    {
+      "id": "A1",
+      "terms": ["http(s) URL", "invalid URL", "long URL"],
+      "statements": ["S1", "S7"],
+      "question": "Which schemes are valid, is there a maximum URL length, and must a host be present?",
+      "default_assumption": "Only http and https with a non-empty host are valid; maximum length 2048 characters; anything else returns 422."
+    },
+    {
+      "id": "A2",
+      "terms": ["custom alias", "taken"],
+      "statements": ["S4", "S5"],
+      "question": "Are aliases case sensitive, and may an alias collide with reserved paths (e.g. 'api', 'links')?",
+      "default_assumption": "Aliases are case sensitive; aliases equal to reserved route names are rejected with 422; generated codes are 7 alphanumeric characters and never collide with existing codes."
+    },
+    {
+      "id": "A3",
+      "terms": ["click count", "click"],
+      "statements": ["S2", "S6"],
+      "question": "Does every successful redirect count as one click, and is reading the click count itself a click?",
+      "default_assumption": "Each successful redirect increments the count by one; unknown codes and stats reads do not; the count is returned by a stats endpoint (GET /api/links/{code})."
+    },
+    {
+      "id": "A4",
+      "terms": ["redirects"],
+      "statements": ["S2"],
+      "question": "Which redirect status should be used, 301 (cacheable) or 302?",
+      "default_assumption": "302 Found with a Location header, so browsers do not cache it and clicks keep being counted."
+    },
+    {
+      "id": "A5",
+      "terms": ["Invalid URLs", "422"],
+      "statements": ["S7"],
+      "question": "Should malformed JSON or a missing url field return 422 or 400?",
+      "default_assumption": "Missing or invalid field values return 422; unparseable JSON bodies return 400."
+    }
+  ],
+  "tasks": [
+    {"id": "T1", "title": "Clarify URL validation rules, alias rules, click semantics, redirect status and error codes", "stage": "clarify", "depends_on": []},
+    {"id": "T2", "title": "Assess risks (alias collisions, concurrency on click counter, open redirect/abuse)", "stage": "risk", "depends_on": ["T1"]},
+    {"id": "T3", "title": "Design Maven project, REST API, in-memory store and error mapping", "stage": "design", "depends_on": ["T1", "T2"]},
+    {"id": "T4", "title": "Implement create link with URL and alias validation (S1, S4, S5, S7)", "stage": "implement", "depends_on": ["T3"]},
+    {"id": "T5", "title": "Implement redirect with 404 for unknown codes and click counting (S2, S3, S6)", "stage": "implement", "depends_on": ["T4"]},
+    {"id": "T6", "title": "Write JUnit tests covering S1-S7", "stage": "tests", "depends_on": ["T4", "T5"]},
+    {"id": "T7", "title": "Security review of input validation and redirect handling", "stage": "security", "depends_on": ["T5", "T6"]},
+    {"id": "T8", "title": "Document commands to run the service and its tests (S8, S9)", "stage": "docs", "depends_on": ["T6"]},
+    {"id": "T9", "title": "Prepare release: full test run and release notes", "stage": "release", "depends_on": ["T7", "T8"]}
+  ],
+  "change_kind": "new-build"
+}

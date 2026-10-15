@@ -1,0 +1,103 @@
+{
+  "summary": "New project: in-memory Spring Boot URL shortener. Main risks are abuse of redirects (unsafe schemes, open redirect, SSRF-style targets), alias/code collisions and click-counter races under concurrency, unbounded in-memory growth, and data loss on restart. There is no existing project, so regression and schema migration risk is limited to future changes; the in-memory store has no migration but a later switch to a database would need one.",
+  "risks": [
+    {
+      "id": "R1",
+      "title": "Unsafe URL schemes or hosts accepted (javascript:, data:, file:, missing host, userinfo tricks)",
+      "severity": "high",
+      "mitigation": "Parse with java.net.URI, allow only http/https (case-insensitive), require non-empty host, cap length at 2048, reject control characters/whitespace and userinfo; return 422. Validate at the create endpoint only, never trust stored values on redirect.",
+      "validation": "Parameterized JUnit test posting javascript:alert(1), data:text/html,x, file:///etc/passwd, ftp://x, http://, 'http://a b', HTTP://ok.com (accepted), a 2049-char URL and a null/blank url; assert 422 for each invalid case and 201 for valid ones."
+    },
+    {
+      "id": "R2",
+      "title": "Open redirect and phishing abuse: service redirects to arbitrary attacker URLs",
+      "severity": "medium",
+      "mitigation": "Accept as inherent to a public shortener but document it; use 302 with only the stored Location header, strip CR/LF from the Location value (reject at validation), add X-Content-Type-Options and Referrer-Policy headers, and note rate limiting/blocklist as follow-up before public exposure.",
+      "validation": "Test that redirect response has status 302, a single Location header equal to the stored URL, and that URLs containing %0d%0a or raw CR/LF are rejected at create time with 422 (no header injection). Security review checklist item in the security stage."
+    },
+    {
+      "id": "R3",
+      "title": "Custom alias collision race: two concurrent creates of the same alias both succeed",
+      "severity": "high",
+      "mitigation": "Use ConcurrentHashMap.putIfAbsent (or computeIfAbsent) as the single atomic check-and-insert; map a failed insert to 409. Do not use containsKey followed by put.",
+      "validation": "JUnit concurrency test: N=50 threads (CountDownLatch start) create the same alias; assert exactly one 201 and N-1 409, and the stored URL belongs to the winner."
+    },
+    {
+      "id": "R4",
+      "title": "Generated code collides with an existing code or custom alias, overwriting a link",
+      "severity": "high",
+      "mitigation": "Generate 7-char codes with SecureRandom over [A-Za-z0-9] and insert via putIfAbsent in a bounded retry loop (e.g. 10 attempts, then 500/503); generated and custom codes share one keyspace and one atomic insert.",
+      "validation": "Unit test with an injected code generator that returns a duplicate first then a unique value: assert the existing link is untouched and the new link gets the second code; test that exhausted retries return an error without overwriting."
+    },
+    {
+      "id": "R5",
+      "title": "Click counter lost updates under concurrent redirects",
+      "severity": "medium",
+      "mitigation": "Store clicks as AtomicLong (or LongAdder) in the link record and increment only on successful redirect lookup; never read-modify-write on a plain long.",
+      "validation": "JUnit test: 100 threads x 10 redirects to one code, then GET /api/links/{code} returns exactly 1000; also assert unknown code redirects (404) and stats reads do not change the count."
+    },
+    {
+      "id": "R6",
+      "title": "Alias collides with reserved routes or is case/format ambiguous, shadowing API endpoints",
+      "severity": "medium",
+      "mitigation": "Enforce regex ^[A-Za-z0-9_-]{3,32}$ using full match (not find), treat aliases as case sensitive, and reject reserved names (api, links, actuator, error, h2-console) with 422. Keep API under /api so a root-level {code} route cannot clash.",
+      "validation": "Parameterized test: aliases 'ab', 33 chars, 'a b', 'a/b', 'a.b', unicode, trailing newline 'abc\\n' and 'api' return 422; 'abc', 'A_b-9', 32 chars return 201; 'Abc' and 'abc' coexist as distinct links."
+    },
+    {
+      "id": "R7",
+      "title": "Unbounded in-memory growth enables memory exhaustion (DoS)",
+      "severity": "medium",
+      "mitigation": "Cap URL length at 2048 and request body size (server.tomcat.max-http-form-post-size / spring.codec max in-memory), and document the limit; add a max link count or rate limiting as a follow-up before public exposure.",
+      "validation": "Test that an oversized body (e.g. 1 MB) is rejected with 4xx and never stored; review confirms no unbounded collections besides the link map, which is documented as a known ceiling."
+    },
+    {
+      "id": "R8",
+      "title": "Data loss on restart: all links and click counts are in memory",
+      "severity": "medium",
+      "mitigation": "State clearly in README that storage is in-memory and ephemeral; hide storage behind one small store class so a database can replace it later. No schema or migration exists in this new project; a future persistence change must add a migration plan.",
+      "validation": "README review confirms the ephemeral-storage warning; a test of the store class through its public methods only, so a later persistent implementation can reuse it."
+    },
+    {
+      "id": "R9",
+      "title": "Wrong status codes and error mapping (400 vs 422, 404 vs 405, 409) break the contract",
+      "severity": "medium",
+      "mitigation": "Add a @RestControllerAdvice mapping MethodArgumentNotValidException and custom validation errors to 422, HttpMessageNotReadableException to 400, unknown code to 404, taken alias to 409; return a JSON error body without stack traces or internal details.",
+      "validation": "MockMvc tests for: missing url field (422), malformed JSON (400), unknown code on redirect and on stats (404), duplicate alias (409); assert the body has no exception class names or stack traces."
+    },
+    {
+      "id": "R10",
+      "title": "Redirect cached by browsers (301) causes undercounted clicks",
+      "severity": "low",
+      "mitigation": "Use 302 Found and set Cache-Control: no-store on redirect responses.",
+      "validation": "MockMvc test asserts redirect status is 302, Location equals the original URL, and the Cache-Control header is present."
+    },
+    {
+      "id": "R11",
+      "title": "Short URL built from the Host header allows host-header poisoning in returned shortUrl",
+      "severity": "medium",
+      "mitigation": "Build shortUrl from a configured base-url property (default http://localhost:8080) rather than the incoming Host/X-Forwarded-Host header.",
+      "validation": "MockMvc test sends a create request with a spoofed Host: evil.example header and asserts the returned shortUrl starts with the configured base URL."
+    },
+    {
+      "id": "R12",
+      "title": "Unverified agent-written code: hallucinated APIs, wrong dependency versions, tests that pass vacuously, undocumented commands that do not work",
+      "severity": "medium",
+      "mitigation": "Pin the Spring Boot parent version in pom.xml, use only spring-boot-starter-web, -validation and -test, run the build in a clean checkout, and have the release stage execute the exact documented commands rather than assume them. Review tests for real assertions on every statement S1-S7.",
+      "validation": "From a clean clone run the README commands verbatim (mvn test and mvn spring-boot:run plus curl smoke for create/redirect/stats); require BUILD SUCCESS and a traceability check that each of S1-S7 has at least one asserting test; mutation spot check by breaking the 409 and 404 branches and confirming tests fail."
+    },
+    {
+      "id": "R13",
+      "title": "Dependency and supply-chain exposure from Maven dependencies",
+      "severity": "low",
+      "mitigation": "Keep the dependency set minimal, rely on the Spring Boot BOM for managed versions, avoid extra libraries for URL validation, and note an OWASP dependency-check or Dependabot step for later.",
+      "validation": "Review the pom.xml dependency list (only starters web, validation, test) and run mvn dependency:tree to confirm no unexpected artifacts."
+    },
+    {
+      "id": "R14",
+      "title": "Privacy: stored long URLs may contain tokens or personal data and are logged",
+      "severity": "low",
+      "mitigation": "Do not log full target URLs or request bodies at INFO level; no client IP or user data is stored; document that URLs are stored in plain text and exposed through the stats endpoint to anyone knowing the code.",
+      "validation": "Run a create and redirect with a URL containing a fake token, grep the application log output and assert the token does not appear; README review confirms the note."
+    }
+  ]
+}

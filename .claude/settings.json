@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash|WebFetch|WebSearch",
+        "hooks": [{ "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR\" && python3 -m orchestrator guard" }]
+      }
+    ]
+  }
+}

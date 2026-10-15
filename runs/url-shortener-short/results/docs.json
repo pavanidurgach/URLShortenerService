@@ -1,0 +1,1 @@
+{"summary":"Rewrote README.md (prerequisites, setup/test/run commands, quick start, API summary, configuration, limitations) and added docs/API.md (endpoint reference with examples, error table, data notes), based on the code read in the staging copy.","files":["README.md","docs/API.md"]}

@@ -1,0 +1,127 @@
+{
+  "name": "sdlc",
+  "description": "Agentic SDLC. Stages marked kind=agent are delegated to Claude Code subagents (.claude/agents/<agent>.md); the kernel enforces everything else.",
+  "stages": [
+    {
+      "id": "plan",
+      "agent": "workflow-planner",
+      "description": "Orchestrator-side planning: waive optional stages, add guidance, flag risks to watch",
+      "max_retries": 1,
+      "post": "plan"
+    },
+    {
+      "id": "requirements",
+      "agent": "requirements-analyst",
+      "deps": [
+        "plan"
+      ],
+      "description": "Normalise requirement, detect ambiguity, decompose into tasks",
+      "max_retries": 1,
+      "post": "requirements"
+    },
+    {
+      "id": "impact",
+      "agent": "impact-analyst",
+      "deps": [
+        "requirements"
+      ],
+      "description": "Codebase reasoning: impacted modules, ripple, data flows",
+      "optional": true,
+      "max_retries": 1
+    },
+    {
+      "id": "risk",
+      "agent": "risk-analyst",
+      "deps": [
+        "requirements"
+      ],
+      "description": "Risk register with mitigations and validation plan",
+      "max_retries": 1
+    },
+    {
+      "id": "design",
+      "agent": "solution-designer",
+      "deps": [
+        "requirements",
+        "impact",
+        "risk"
+      ],
+      "description": "Design record: stack, commands, API, schema, ADRs, decisions, rollback plan",
+      "max_retries": 1,
+      "entry_gate": "ambiguities_resolved",
+      "exit_gate": "design_complete",
+      "post": "design"
+    },
+    {
+      "id": "implement",
+      "agent": "implementer",
+      "deps": [
+        "requirements",
+        "design"
+      ],
+      "description": "HIGH IMPACT: implement the design with tests, in a staging copy; the diff is applied after policy checks",
+      "high_impact": true,
+      "writes": true,
+      "max_retries": 1,
+      "entry_gate": "ambiguities_resolved",
+      "exit_gate": "files_written",
+      "post": "apply"
+    },
+    {
+      "id": "tests",
+      "agent": "test-engineer",
+      "deps": [
+        "implement",
+        "design"
+      ],
+      "description": "Run the full test-suite (re-verified independently by the kernel)",
+      "max_retries": 1,
+      "exit_gate": "tests_green",
+      "post": "tests"
+    },
+    {
+      "id": "security",
+      "agent": "security-reviewer",
+      "deps": [
+        "implement",
+        "design",
+        "risk"
+      ],
+      "description": "Security review merged with a policy pattern scan",
+      "max_retries": 1,
+      "exit_gate": "no_high_findings",
+      "post": "security"
+    },
+    {
+      "id": "docs",
+      "agent": "technical-writer",
+      "deps": [
+        "implement",
+        "design"
+      ],
+      "description": "Documentation written in a staging copy, policy-checked, applied",
+      "writes": true,
+      "max_retries": 1,
+      "fallback": "technical-writer-lite",
+      "post": "apply"
+    },
+    {
+      "id": "release",
+      "agent": "kernel",
+      "deps": [
+        "tests",
+        "security",
+        "docs",
+        "risk",
+        "implement",
+        "design"
+      ],
+      "description": "HIGH IMPACT: release readiness computed from evidence; a human signs off",
+      "high_impact": true,
+      "max_retries": 0,
+      "entry_gate": "approvals_recorded",
+      "exit_gate": "release_go",
+      "kind": "kernel"
+    }
+  ]
+}

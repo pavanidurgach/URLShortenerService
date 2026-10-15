@@ -1,0 +1,57 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "new-project",
+        "existing-project"
+      ]
+    },
+    "skip": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "stage_guidance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string"
+          },
+          "guidance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "guidance"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "risks_to_watch": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rationale": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary",
+    "mode",
+    "skip",
+    "stage_guidance",
+    "risks_to_watch",
+    "rationale"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "test_command_used": {
+      "type": "string"
+    },
+    "tests_passed": {
+      "type": "boolean"
+    },
+    "iterations": {
+      "type": "integer"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary",
+    "test_command_used",
+    "tests_passed",
+    "iterations",
+    "notes"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+{
+  "attempt_success_rate": 1.0,
+  "run_success_rate": 1.0,
+  "retries": 0,
+  "fallbacks": 0,
+  "triage_decisions": 0,
+  "rollbacks": 0,
+  "policy_violations": 0,
+  "gate_blocks": 0,
+  "approvals_granted": 2,
+  "approvals_denied": 0,
+  "replans": 2,
+  "stages_invalidated": 0,
+  "early_cutoffs": 0,
+  "mttr_seconds": null,
+  "unrecovered_failures": 0,
+  "agent_runs": 8,
+  "agent_tokens": 209888,
+  "agent_tool_uses": 77,
+  "e2e_latency_seconds": 968.526,
+  "stage_latency_seconds": {
+    "clarify": 162.111,
+    "design": 53.37,
+    "docs": 204.775,
+    "implement": 312.517,
+    "plan": 28.263,
+    "release": 0.001,
+    "requirements": 28.939,
+    "risk": 159.408,
+    "security": 204.006,
+    "tests": 198.393
+  }
+}

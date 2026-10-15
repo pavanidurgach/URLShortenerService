@@ -1,0 +1,1 @@
+{"summary":"Surefire: 55 tests run across 4 classes (ConcurrencyTest 2, LinkApiTest 46, LinkServiceTest 5, LinkStoreTest 2), 0 failures, 0 errors, 0 skipped. Java 25.0.1, Maven 3.9.11.","passed":55,"failed":0,"errors":0,"command":"mvn -q dependency:resolve && mvn -B -q test","failures":[]}

@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "passed": {
+      "type": "integer"
+    },
+    "failed": {
+      "type": "integer"
+    },
+    "errors": {
+      "type": "integer"
+    },
+    "command": {
+      "type": "string"
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "passed",
+    "failed",
+    "errors",
+    "command",
+    "failures"
+  ],
+  "additionalProperties": false
+}

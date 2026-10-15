@@ -1,0 +1,29 @@
+{
+  "decisions": {
+    "A1": {
+      "answer": "Only http/https, max 2048 chars, host required (Recommended)",
+      "source": "human"
+    },
+    "A2": {
+      "answer": "Case-sensitive, reject reserved paths (Recommended)",
+      "source": "human"
+    },
+    "A3": {
+      "answer": "Yes, each redirect increments count by one (Recommended)",
+      "source": "human"
+    },
+    "A4": {
+      "answer": "302 Found (Recommended)",
+      "source": "human"
+    },
+    "A5": {
+      "answer": "422 for missing/invalid fields, 400 for unparseable JSON (Recommended)",
+      "source": "human"
+    }
+  },
+  "assumptions": [],
+  "guidance": "",
+  "answered_by": "human:pavanidurga",
+  "ignored_answers": [],
+  "summary": "5 decisions, 0 assumed by default"
+}

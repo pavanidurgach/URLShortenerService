@@ -1,0 +1,36 @@
+﻿{
+  "stage": "implement",
+  "description": "HIGH IMPACT: implement the design with tests, in a staging copy; the diff is applied after policy checks",
+  "upstream": {
+    "requirements": {
+      "summary": "New project: Spring Boot (Maven) URL shortener with create, redirect, custom alias, click count and validation, tested with JUnit and documented run/test commands.",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\requirements.json"
+    },
+    "design": {
+      "summary": "New project: single-module Spring Boot 3.5.6 (Maven, Java) URL shortener with an in-memory ConcurrentHashMap store (putIfAbsent for atomic code/alias uniqueness, AtomicLong click counter), JSON API under /api, root-level GET /{code} 302 redirect, centralized error mapping (422/400/404/409), JUnit 5 + MockMvc tests. | stack: Java (compiled with java.release=17, runs on the locally installed JDK 25)/Spring Boot 3.5.6 (spring-boot-starter-web, spring-boot-starter-validation, spring-boot-starter-test) | test: mvn -B -q test",
+      "file": "C:\\Users\\pavan\\Documents\\repos\\urlShortner\\urlShortner\\runs\\url-shortener-short\\artifacts\\design.json"
+    }
+  },
+  "design": {
+    "stack": {
+      "language": "Java (compiled with java.release=17, runs on the locally installed JDK 25)",
+      "framework": "Spring Boot 3.5.6 (spring-boot-starter-web, spring-boot-starter-validation, spring-boot-starter-test)",
+      "build_tool": "Maven",
+      "rationale": "Stack is mandated by the requirement (Java, Spring Boot, Maven, JUnit). Boot 3.5.6 parent is already in the local ~/.m2 so build works offline; release 17 is the Boot 3 baseline and compiles on JDK 25. Only three starters to keep supply-chain surface minimal."
+    },
+    "commands": {
+      "setup": "mvn -q dependency:resolve",
+      "test": "mvn -B -q test",
+      "run": "mvn spring-boot:run"
+    },
+    "api": [
+      "POST /api/links  body {\"url\": string, \"alias\": string optional}  -> 201 {\"code\", \"shortUrl\", \"url\"}; 422 invalid/missing url or invalid/reserved alias; 409 alias taken; 400 unparseable JSON",
+      "GET /{code}  -> 302 Found with single Location header = stored URL, Cache-Control: no-store; increments click count by one; 404 unknown code",
+      "GET /api/links/{code}  -> 200 {\"code\", \"url\", \"clicks\"}; 404 unknown code; does not change the click count",
+      "Error body (all errors): {\"error\": string, \"message\": string} with no exception class names or stack traces",
+      "shortUrl = app.base-url + \"/\" + code (never derived from Host / X-Forwarded-Host)"
+    ],
+    "schema": [],
+    "rollback_plan": "New project with no prior release: rollback is to stop the service and revert/discard the release commit or tag (git revert of the release commit, or redeploy the previous artifact if any). There is no database, schema or migration, and in-memory data is ephemeral, so no data restore is needed; deleting the target/ directory removes build output. If persistence is added later, that release must carry its own forward/backward migration plan."
+  }
+}

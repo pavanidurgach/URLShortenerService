@@ -1,0 +1,22 @@
+{
+  "summary": "New project: Spring Boot (Maven) URL shortener with JUnit tests. Waive impact analysis since there is no existing code to analyse; run all other stages.",
+  "mode": "new-project",
+  "skip": ["impact"],
+  "stage_guidance": [
+    {"stage": "requirements", "guidance": "Pin down ambiguities: allowed URL schemes (http/https only), max URL length, alias case sensitivity, whether alias may collide with reserved paths, whether a redirect counts as a click, redirect status (302 vs 301), and 422 vs 400 for malformed JSON."},
+    {"stage": "design", "guidance": "Keep it minimal: in-memory ConcurrentHashMap store with atomic putIfAbsent for alias uniqueness and AtomicLong click counter; state the persistence ceiling explicitly. Document exact run and test commands (mvn spring-boot:run, mvn test). Use Java and Spring Boot versions that are available locally."},
+    {"stage": "implement", "guidance": "Validate URLs with java.net.URI (scheme http/https, host present) and alias with regex ^[A-Za-z0-9_-]{3,32}$. Map errors: invalid URL/alias 422, taken alias 409, unknown code 404. Generated codes must not collide with existing codes or aliases. Include MockMvc tests for each requirement bullet and a concurrency check on alias creation."},
+    {"stage": "tests", "guidance": "Run mvn test from a clean state; confirm Maven and a JDK are present and report clearly if the toolchain is missing."},
+    {"stage": "security", "guidance": "Check open redirect and scheme abuse (javascript:, data:, file:), unbounded URL length, alias path-reserved collisions, and unbounded memory growth."},
+    {"stage": "docs", "guidance": "README must contain verified run and test commands and the API with example requests and status codes."}
+  ],
+  "risks_to_watch": [
+    "Maven or JDK may be missing or mismatched with the Spring Boot version, blocking build and test evidence.",
+    "Weak URL validation allowing non-http(s) schemes or malformed hosts.",
+    "Race condition on alias creation or click counting giving wrong 409 or counts.",
+    "Random code generation colliding with custom aliases.",
+    "In-memory storage loses data on restart and grows unbounded; must be documented as a known limitation.",
+    "Status code mapping drift (422 vs 400 from Spring default validation handling)."
+  ],
+  "rationale": "The workspace started empty, so impact analysis has nothing to inspect and adds no value; it is the only optional stage. All mandatory stages remain. Guidance targets the spots where a small service most often goes wrong: validation, status codes, concurrency and toolchain availability."
+}

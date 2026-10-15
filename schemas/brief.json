@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "what_will_happen": {
+      "type": "string"
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "checks_to_perform": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommendation": {
+      "enum": [
+        "approve",
+        "approve_with_caution",
+        "reject"
+      ]
+    }
+  },
+  "required": [
+    "summary",
+    "what_will_happen",
+    "risks",
+    "checks_to_perform",
+    "recommendation"
+  ],
+  "additionalProperties": false
+}

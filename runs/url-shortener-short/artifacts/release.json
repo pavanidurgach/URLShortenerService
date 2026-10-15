@@ -1,0 +1,56 @@
+{
+  "decision": "GO",
+  "version": "0.1.0",
+  "checklist": [
+    {
+      "name": "tests green (independently re-run)",
+      "ok": true,
+      "required": true,
+      "detail": "55 passed, exit 0"
+    },
+    {
+      "name": "no high-severity security findings",
+      "ok": true,
+      "required": true,
+      "detail": "0 high, 2 medium"
+    },
+    {
+      "name": "documentation exists in the workspace",
+      "ok": true,
+      "required": true,
+      "detail": "README.md, docs/API.md"
+    },
+    {
+      "name": "every risk has a validation plan",
+      "ok": true,
+      "required": true,
+      "detail": "14 risks"
+    },
+    {
+      "name": "audit chain intact",
+      "ok": true,
+      "required": true,
+      "detail": "ok"
+    },
+    {
+      "name": "human approvals recorded for high-impact stages",
+      "ok": true,
+      "required": true,
+      "detail": "all present"
+    },
+    {
+      "name": "change footprint within policy",
+      "ok": true,
+      "required": true,
+      "detail": "18 files <= 120"
+    },
+    {
+      "name": "assumptions acknowledged",
+      "ok": false,
+      "required": false,
+      "detail": "4 recorded in the summary"
+    }
+  ],
+  "notes": "release_notes.md",
+  "summary": "GO v0.1.0: 7/8 checks"
+}

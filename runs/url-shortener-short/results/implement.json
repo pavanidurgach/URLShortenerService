@@ -1,0 +1,7 @@
+{
+  "summary": "New project: Spring Boot 3.5.6 (Maven, Java 17) URL shortener with in-memory ConcurrentHashMap store, POST /api/links, GET /{code} 302 redirect with Cache-Control no-store, GET /api/links/{code} stats, centralized 422/400/404/409 error mapping, security headers filter with body size cap, README with run/test commands.",
+  "test_command_used": "mvn -B -q test",
+  "tests_passed": true,
+  "iterations": 1,
+  "notes": "55 JUnit tests pass (LinkApiTest 46, ConcurrencyTest 2, LinkServiceTest 5, LinkStoreTest 2) on the first run. Covers risks R1-R11 and R14. Body size cap (8 KB, 413) is enforced only on declared Content-Length, so chunked bodies are not capped. Storage is ephemeral and unbounded, documented in README. R12/R13 are for the release and review stages."
+}

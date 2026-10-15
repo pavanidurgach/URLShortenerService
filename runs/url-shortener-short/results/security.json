@@ -1,0 +1,19 @@
+{
+  "summary": "New project reviewed. URL validation (http/https only, host required, no userinfo, 2048 cap, no control/non-ASCII/encoded CRLF), alias regex with reserved names, atomic putIfAbsent for aliases and codes, AtomicLong clicks, 302 with no-store, configured base URL and generic JSON errors are implemented correctly. Two real gaps remain: the link store has no size cap or rate limit, and the body-size guard is bypassed by chunked requests.",
+  "findings": [
+    {
+      "file": "src/main/java/com/example/shortener/LinkStore.java",
+      "line": 11,
+      "rule": "unbounded-memory-growth",
+      "severity": "medium",
+      "detail": "The links ConcurrentHashMap has no maximum size, TTL or eviction, and POST /api/links has no authentication or rate limiting. Any client can create links in a loop (each up to 2048 chars of URL plus a 32-char alias) until the heap is exhausted, which is a denial of service. Add a configurable max link count (reject with 503/429 when full) and per-client rate limiting before any public exposure. Risk R7 asked for this as a follow-up, so no code mitigation exists yet."
+    },
+    {
+      "file": "src/main/java/com/example/shortener/SecurityHeadersFilter.java",
+      "line": 27,
+      "rule": "request-size-limit-bypass",
+      "severity": "medium",
+      "detail": "The body limit only checks the declared Content-Length. A request with Transfer-Encoding: chunked reports -1, passes the check and is fully buffered by Jackson in @RequestBody, so the 8192-byte limit (app.max-body-bytes) is not enforced. The class comment acknowledges this. Wrap the request in a size-counting stream, or set server.tomcat.max-swallow-size and a bounded-body mechanism, so oversized chunked bodies are rejected. This weakens the R7 mitigation."
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "mitigation": {
+            "type": "string"
+          },
+          "validation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "severity",
+          "mitigation",
+          "validation"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "risks"
+  ],
+  "additionalProperties": false
+}

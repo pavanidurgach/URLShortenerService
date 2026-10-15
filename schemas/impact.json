@@ -1,0 +1,64 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "new-project",
+        "existing-project"
+      ]
+    },
+    "impacted": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ripple": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string"
+          },
+          "touches": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry",
+          "touches",
+          "note"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary",
+    "mode",
+    "impacted",
+    "ripple",
+    "data_flows",
+    "notes"
+  ],
+  "additionalProperties": false
+}

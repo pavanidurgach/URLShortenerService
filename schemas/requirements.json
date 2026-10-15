@@ -1,0 +1,122 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "problem": {
+      "type": "string"
+    },
+    "statements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "functional",
+              "non-functional"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "statements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "question": {
+            "type": "string"
+          },
+          "default_assumption": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "terms",
+          "statements",
+          "question",
+          "default_assumption"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "stage",
+          "depends_on"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "change_kind": {
+      "enum": [
+        "new-build",
+        "change-existing",
+        "bug-fix",
+        "refactor",
+        "tests-or-docs"
+      ]
+    }
+  },
+  "required": [
+    "summary",
+    "problem",
+    "statements",
+    "ambiguities",
+    "tasks",
+    "change_kind"
+  ],
+  "additionalProperties": false
+}

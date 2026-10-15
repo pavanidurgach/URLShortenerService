@@ -1,0 +1,84 @@
+{
+  "denied_prefixes": [
+    ".git/",
+    ".claude/",
+    ".github/"
+  ],
+  "denied_name_patterns": [
+    "^\\.env",
+    "\\.pem$",
+    "^id_rsa",
+    "\\.key$",
+    "\\.p12$"
+  ],
+  "max_files": 120,
+  "max_file_bytes": 400000,
+  "rules": [
+    {
+      "name": "private-key",
+      "regex": "-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----",
+      "severity": "high",
+      "scope": "all"
+    },
+    {
+      "name": "aws-access-key",
+      "regex": "AKIA[0-9A-Z]{16}",
+      "severity": "high",
+      "scope": "all"
+    },
+    {
+      "name": "hardcoded-credential",
+      "regex": "(?i)(password|passwd|secret|api[_-]?key|token)\\s*[:=]\\s*[\"'][^\"'\\s]{8,}[\"']",
+      "severity": "high",
+      "scope": "all"
+    },
+    {
+      "name": "dynamic-code-eval",
+      "regex": "\\b(eval|exec)\\s*\\(",
+      "severity": "high",
+      "scope": "code"
+    },
+    {
+      "name": "shell-command-exec",
+      "regex": "shell\\s*=\\s*True|os\\.system\\(|Runtime\\.getRuntime\\(\\)\\.exec|child_process\\.exec\\(",
+      "severity": "high",
+      "scope": "code"
+    },
+    {
+      "name": "unsafe-deserialization",
+      "regex": "pickle\\.loads?\\(|ObjectInputStream\\(|unserialize\\(",
+      "severity": "high",
+      "scope": "code"
+    },
+    {
+      "name": "tls-verification-disabled",
+      "regex": "verify\\s*=\\s*False|rejectUnauthorized\\s*:\\s*false|InsecureSkipVerify|TrustAllCerts|NoopHostnameVerifier",
+      "severity": "high",
+      "scope": "code"
+    },
+    {
+      "name": "sql-string-building",
+      "regex": "(?i)(execute|query|update|prepareStatement)\\s*\\(\\s*(f[\"']|[\"'][^\"']*[\"']\\s*\\+)",
+      "severity": "high",
+      "scope": "code"
+    },
+    {
+      "name": "debug-enabled",
+      "regex": "(?i)\\bdebug\\s*=\\s*true\\b",
+      "severity": "medium",
+      "scope": "code"
+    }
+  ],
+  "denied_command_patterns": [
+    "\\bsudo\\b",
+    "\\bcurl\\b",
+    "\\bwget\\b",
+    "\\bssh\\b",
+    "\\bscp\\b",
+    "\\brm\\s+-[a-z]*r[a-z]*f?\\s+(/|~|\\.\\.)",
+    "\\|\\s*(sh|bash)\\b",
+    "\\.\\./",
+    "(^|\\s)/(etc|usr|var|home|Users|root)\\b",
+    "~/"
+  ]
+}
